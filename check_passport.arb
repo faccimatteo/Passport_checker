@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+require 'faraday'
+require 'telegram/bot'
+require 'logger'
+require 'dotenv/load'
+
+token = ENV['TELEGRAM_BOT_TOKEN']
+province = ENV['PROVINCE']
+
+logger = Logger.new(STDOUT)
+logger.level = Logger::INFO
+logger.datetime_format = '%Y-%m-%d %H:%M:%S'
+logger.info("Type /start to run CheckPassportAvailabilityBot")
+
+def check_and_notify_availability ()
+    conn = Faraday.new(
+        url: 'https://www.passaportonline.poliziadistato.it',
+        params: {codop: 'resultRicercaRegistiProvincia', provincia: 'VI'},
+        headers: {
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0',
+            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language' => 'en-GB,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Referer': 'https://www.passaportonline.poliziadistato.it/CittadinoAction.do?codop=backToIndex',
+            'DNT': '1', 
+            'Connection': 'keep-alive', 
+            'Upgrade-Insecure-Requests': '1', 
+            'Sec-Fetch-Dest': 'document', 
+            'Sec-Fetch-Mode': 'navigate', 
+            'Sec-Fetch-Site': 'same-origin',
+            'Sec-Fetch-User': '?1'
+        }
+    )
+    response = conn.get('CittadinoAction.do')
+    puts response.body
+    return response.body.include? "<td headers=\"disponibilita\">Si</td>"
+end
+
+Telegram::Bot::Client.run(token) do |bot|
+    welcome_message = true
+    times_checked_without_availability = 0
+    bot.listen do |message|
+        case message.text
+        when '/start'
+            logger.info("CheckPassportAvailabilityBot started")
+            bot.api.send_message(chat_id: message.chat.id, text: "Hello dear #{message.from.first_name}")
+            bot.api.send_message(chat_id: message.chat.id, text: "Type '/help' to list all commands available")
+        when '/stop'
+            bot.api.send_message(chat_id: message.chat.id, text: "See ya, #{message.from.first_name}!")
+            logger.info("CheckPassportAvailabilityBot terminated")
+        when '/help'
+            bot.api.send_message(chat_id: message.chat.id, text: "Type '/checkAvailability' to start passport availability checking")
+        when '/checkAvailability'
+            while true
+                if welcome_message == true
+                    bot.api.send_message(chat_id: message.chat.id, text: "Starting passport availability detection.. 😎")
+                    welcome_message = false
+                end
+                if check_and_notify_availability() == true 
+                    bot.api.send_message(chat_id: message.chat.id, text: "Passport is available for booking!")
+                    logger.info("Passport booking is now available")
+                    times_checked_without_availability = 0                
+                else 
+                    logger.info("No passport booking availability at the moment")
+                    times_checked_without_availability = times_checked_without_availability + 1
+                end
+                if times_checked_without_availability == 260
+                    bot.api.send_message(chat_id: message.chat.id, text: "No availability found in the last two hours.. 😭")
+                    times_checked_without_availability = 0
+                end
+                sleep(30)
+            end
+        end
+    end
+end
