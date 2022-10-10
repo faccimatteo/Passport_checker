@@ -1,4 +1,4 @@
-# Passport checker ![Passport Checker logo](https://github.com/faccimatteo/Passport_checker/blob/main/logo/passport_logo.png)
+# Passport checker ![Passport Checker logo](https://github.com/faccimatteo/Passport_checker/blob/main/logo/passport.ico)
 
 ## What can I do? 
 This ruby program is made to automatic check passport availability for a province in Italy.
