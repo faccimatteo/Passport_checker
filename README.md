@@ -1,4 +1,4 @@
-# ![Passport Checker logo](https://github.com/faccimatteo/Passport_checker/blob/main/logo/passport.ico) Passport checker 
+# Passport checker ![Passport Checker logo](https://github.com/faccimatteo/Passport_checker/blob/main/logo/passport.ico  | width=52 | height=52)
 
 ## What can I do? 
 This ruby program is made to automatic check passport availability for a province in Italy.
@@ -6,7 +6,7 @@ Once passport is available for booking you will get notified with a Telegram mes
 
 ## Usage
 
-1. Install Ruby from https://rubyinstaller.org/downloads/ (if you don't already have)
+1. Install Ruby from `https://rubyinstaller.org/downloads/` (if you don't already have)
 2. Install requried gems with 
 `gem install dotenv && gem install faraday && gem install telegram && gem install logger`
 3. Create a telegram bot (check https://core.telegram.org/bots#how-do-i-create-a-bot for the simple guide). 
