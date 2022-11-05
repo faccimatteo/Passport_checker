@@ -4,8 +4,8 @@ require 'telegram/bot'
 require 'logger'
 require 'dotenv/load'
 
-token = ENV['TELEGRAM_BOT_TOKEN']
-province = ENV['PROVINCE']
+$token = ENV['TELEGRAM_BOT_TOKEN']
+$province = ENV['PROVINCE']
 
 logger = Logger.new(STDOUT)
 logger.level = Logger::INFO
@@ -15,7 +15,7 @@ logger.info("Type /start to run CheckPassportAvailabilityBot")
 def check_and_notify_availability ()
     conn = Faraday.new(
         url: 'https://www.passaportonline.poliziadistato.it',
-        params: {codop: 'resultRicercaRegistiProvincia', provincia: 'VI'},
+        params: {codop: 'resultRicercaRegistiProvincia', provincia: $province},
         headers: {
             'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0',
             'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
@@ -32,18 +32,19 @@ def check_and_notify_availability ()
         }
     )
     response = conn.get('CittadinoAction.do')
-    puts response.body
     return response.body.include? "<td headers=\"disponibilita\">Si</td>"
 end
 
-Telegram::Bot::Client.run(token) do |bot|
+Telegram::Bot::Client.run($token) do |bot|
     welcome_message = true
     times_checked_without_availability = 0
     bot.listen do |message|
+        # used to fix bug of non existing text method in message received  
+        next if message.respond_to?(:text=) == false
         case message.text
         when '/start'
             logger.info("CheckPassportAvailabilityBot started")
-            bot.api.send_message(chat_id: message.chat.id, text: "Hello dear #{message.from.first_name}")
+            bot.api.send_message(chat_id: message.chat.id, text: "Hello #{message.from.first_name}!")
             bot.api.send_message(chat_id: message.chat.id, text: "Type '/help' to list all commands available")
         when '/stop'
             bot.api.send_message(chat_id: message.chat.id, text: "See ya, #{message.from.first_name}!")
@@ -57,7 +58,7 @@ Telegram::Bot::Client.run(token) do |bot|
                     welcome_message = false
                 end
                 if check_and_notify_availability() == true 
-                    bot.api.send_message(chat_id: message.chat.id, text: "Passport is available for booking!")
+                    bot.api.send_message(chat_id: message.chat.id, text: "Passport booking is available!")
                     logger.info("Passport booking is now available")
                     times_checked_without_availability = 0                
                 else 
@@ -68,7 +69,6 @@ Telegram::Bot::Client.run(token) do |bot|
                     bot.api.send_message(chat_id: message.chat.id, text: "No availability found in the last two hours.. 😭")
                     times_checked_without_availability = 0
                 end
-                sleep(30)
             end
         end
     end
