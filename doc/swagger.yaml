@@ -1,0 +1,88 @@
+openapi: 3.0.3
+info:
+  title: Passport@Bot
+  description: >-
+    This swagger defines API for Passport Bot application.
+  contact:
+    name: GitHub Project
+    url: https://github.com/faccimatteo/Passport_checker 
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.0.1
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Passport 
+    description: Endpoints about passport events. 
+paths:
+  /checkBookingAvailability:
+    get:
+      parameters: 
+        - name: province
+          in: query
+          required: true
+          style: form
+          explode: true
+          schema: 
+            type: string
+      tags:
+        - Passport
+      summary: Check if passport in a given province can be reserved or not. 
+      description: Check if passport in a given province can be reserved or not.
+      responses:
+          '200':
+            description: Retrun if a passport is available for booking or not in the requested province.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/PassportAvailabilityResponse'
+          '400':
+            description: Bad request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorHTTPResponse'
+      x-swagger-router-controller: Passport
+
+components:
+  schemas:
+    PassportAvailabilityResponse:
+      type: object
+      description: Object containing the useful information about the passport availability.
+      properties: 
+        isAvailable: 
+          type: boolean
+        lastTimeAvailable: 
+          type: string 
+          format: date
+        bookingDatesOptions:
+          $ref: '#/components/schemas/PassportBooking'
+    PassportBooking:
+      type: object
+      description: Useful information about an available passport booking for a Province. 
+      properties:
+        passportBookingDates:
+          type: array 
+          items:
+            $ref: '#/components/schemas/PassportBookingDate'
+    
+    PassportBookingDate:
+      type: object
+      description: Useful information about an available passport booking for a certain date. 
+      properties: 
+        bookingDate:
+          type: string
+          description: Available date for passport to be booked.
+          format: date
+        bookingNumber: 
+          type: integer
+    ErrorHTTPResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: '400'
+        message:
+          type: string
+          example: Not found  

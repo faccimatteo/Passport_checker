@@ -1,2 +1,3 @@
 # Ignoring python cached files
 __pycache__
+log.html
